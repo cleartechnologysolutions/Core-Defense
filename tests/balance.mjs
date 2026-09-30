@@ -5,7 +5,7 @@ for(let map=0;map<3;map++){
  positions.sort((a,b)=>b.coverage-a.coverage);
  for(let wave=1;wave<=12;wave++){
   for(let round=0;round<20;round++){
-   const type=s.towers.length%4===3?'frost':s.towers.length%3===2?'cannon':'bolt';
+   const type=map===2?['cannon','frost','bolt'][s.towers.length%3]:s.towers.length%4===3?'frost':s.towers.length%3===2?'cannon':'bolt';
    if(s.towers.length>=8){const t=s.towers.filter(t=>t.level<3&&t.type!=='frost'&&upgradeCost(t)<=s.gold).sort((a,b)=>a.level-b.level)[0];if(t){upgrade(s,t.id);continue}}
    if(s.gold<TYPES[type].cost)break;const p=positions.find(p=>!s.towers.some(t=>t.col===p.col&&t.row===p.row));if(!p)break;place(s,type,p.col,p.row);
   }

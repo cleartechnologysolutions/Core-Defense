@@ -21,11 +21,11 @@ export function fresh(map=0){return{map,wave:0,status:'build',gold:185,health:20
 export function place(s,type,col,row){if(!TYPES[type]||!['build','wave'].includes(s.status)||!Number.isInteger(col)||!Number.isInteger(row)||col<0||col>=10||row<0||row>=12)return false;const{x,y}=spot(col,row);if(onRoad(s.map,x,y)||s.towers.some(t=>t.col===col&&t.row===row)||s.gold<TYPES[type].cost)return false;s.gold-=TYPES[type].cost;s.towers.push({id:s.nextId++,type,col,row,level:1,spent:TYPES[type].cost,cooldown:0,angle:0});return true}
 export function upgrade(s,id){const t=s.towers.find(t=>t.id===id);if(!t||t.level>=3||!['build','wave'].includes(s.status)||s.gold<upgradeCost(t))return false;const cost=upgradeCost(t);s.gold-=cost;t.spent+=cost;t.level++;return true}
 export function sell(s,id){const t=s.towers.find(t=>t.id===id);if(!t||!['build','wave'].includes(s.status))return false;s.gold+=sellValue(t);s.towers=s.towers.filter(t=>t.id!==id);return true}
-export function wavePlan(wave,map){const count=6+wave*2,mapBoost=1+map*.14;return Array.from({length:count},(_,i)=>{const boss=wave%4===0&&i===count-1,type=boss?'boss':wave>=3&&i%4===0?'tank':wave>=2&&i%3===0?'runner':'scout';const growth=1+(wave-1)*.3;return{type,hp:Math.round(({scout:32,runner:22,tank:100,boss:340}[type])*growth*mapBoost),speed:({scout:37,runner:66,tank:27,boss:23}[type])*(1+(wave-1)*.015),reward:{scout:7,runner:7,tank:15,boss:65}[type],armor:0,leak:boss?5:type==='tank'?2:1}})}
+export function wavePlan(wave,map){const count=8+wave*2,mapBoost=1+map*.15;return Array.from({length:count},(_,i)=>{const boss=wave%4===0&&i===count-1,type=boss?'boss':wave>=3&&i%4===0?'tank':wave>=2&&i%3===0?'runner':'scout';const growth=1+(wave-1)*.38+Math.pow(Math.max(0,wave-4),1.65)*.035;return{type,hp:Math.round(({scout:42,runner:30,tank:125,boss:480}[type])*growth*mapBoost),speed:({scout:47,runner:80,tank:35,boss:30}[type])*(1+(wave-1)*.015),reward:{scout:6,runner:6,tank:12,boss:45}[type],armor:0,leak:boss?5:type==='tank'?2:1}})}
 export function startWave(s){if(s.status!=='build'||s.wave>=WAVES)return false;s.wave++;s.spawn=wavePlan(s.wave,s.map);s.spawnIn=.45;s.status='wave';return true}
 export function tick(s,dt,emit=()=>{}){
  if(s.status!=='wave')return;dt=Math.min(.05,Math.max(0,dt));s.time+=dt;
- s.spawnIn=Math.max(0,s.spawnIn-dt);if(s.spawn.length&&s.spawnIn<=0){const spec=s.spawn.shift();s.enemies.push({...spec,id:s.nextId++,maxHp:spec.hp,d:0,slow:0,armor:spec.type==='tank'?.45:spec.type==='boss'?.25:0});s.spawnIn=Math.max(.48,1.05-s.wave*.03);emit('spawn',s.enemies.at(-1))}
+ s.spawnIn=Math.max(0,s.spawnIn-dt);if(s.spawn.length&&s.spawnIn<=0){const spec=s.spawn.shift();s.enemies.push({...spec,id:s.nextId++,maxHp:spec.hp,d:0,slow:0,armor:spec.type==='tank'?.45:spec.type==='boss'?.25:0});s.spawnIn=Math.max(.32,.85-s.wave*.035);emit('spawn',s.enemies.at(-1))}
  for(const e of s.enemies){e.slow=Math.max(0,e.slow-dt);e.d+=e.speed*(e.slow>0?.52:1)*dt;if(e.d>=pathLength(s.map)){e.hp=0;e.escaped=true;s.health=Math.max(0,s.health-e.leak);emit('leak',e)}}
  s.enemies=s.enemies.filter(e=>!e.escaped);
  if(s.health<=0){s.status='lost';s.spawn=[];s.shots=[];emit('lost',{});return}
@@ -34,5 +34,5 @@ export function tick(s,dt,emit=()=>{}){
  s.shots=s.shots.filter(b=>!b.dead);
  for(const e of s.enemies)if(e.hp<=0){s.gold+=e.reward;s.kills++;emit('kill',{...pointAt(s.map,e.d),type:e.type})}
  s.enemies=s.enemies.filter(e=>e.hp>0);
- if(!s.enemies.length&&!s.spawn.length){s.shots=[];const reward=30+s.wave*4;s.gold+=reward;s.status=s.wave===WAVES?'won':'build';emit(s.status==='won'?'won':'waveEnd',{reward})}
+ if(!s.enemies.length&&!s.spawn.length){s.shots=[];const reward=20+s.wave*2;s.gold+=reward;s.status=s.wave===WAVES?'won':'build';emit(s.status==='won'?'won':'waveEnd',{reward})}
 }

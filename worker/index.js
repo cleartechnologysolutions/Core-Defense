@@ -4,11 +4,12 @@ export function validGame(g){
  if(!g||![0,1,2].includes(g.map)||!Number.isInteger(g.wave)||!num(g.wave,12)||!['build','wave','won','lost'].includes(g.status)||!num(g.gold)||!num(g.health,20)||!num(g.kills)||!num(g.time)||!Number.isInteger(g.nextId)||!num(g.nextId)||!num(g.spawnIn,10))return false;
  if(g.status==='won'&&(g.wave!==12||g.health<=0))return false;
  if(!Array.isArray(g.towers)||g.towers.length>120||!Array.isArray(g.enemies)||g.enemies.length>100||!Array.isArray(g.shots)||g.shots.length>300||!Array.isArray(g.spawn)||g.spawn.length>50)return false;
- const towerTypes=['bolt','cannon','frost'],enemyTypes=['scout','runner','tank','boss'];
- if(!g.towers.every(t=>t&&towerTypes.includes(t.type)&&Number.isInteger(t.col)&&num(t.col,9)&&Number.isInteger(t.row)&&num(t.row,11)&&[1,2,3].includes(t.level)&&num(t.id)&&num(t.spent)&&num(t.cooldown,10)&&typeof t.angle==='number'&&Number.isFinite(t.angle)))return false;
+ if(g.rules!==2||!g.cooldowns||!num(g.cooldowns.airstrike,24)||!num(g.cooldowns.freeze,18)||!Array.isArray(g.zones)||g.zones.length>40||!g.zones.every(z=>z&&Number.isFinite(z.x)&&z.x>=-30&&z.x<=400&&Number.isFinite(z.y)&&z.y>=-30&&z.y<=460&&num(z.r,100)&&num(z.life,3)&&num(z.damage)))return false;
+ const towerTypes=['bolt','cannon','frost'],enemyTypes=['scout','runner','tank','boss','shield','repair'];
+ if(!g.towers.every(t=>t&&towerTypes.includes(t.type)&&(!t.branch||({bolt:['rapid','chain'],cannon:['siege','napalm'],frost:['deep','blizzard']}[t.type]).includes(t.branch))&&Number.isInteger(t.col)&&num(t.col,9)&&Number.isInteger(t.row)&&num(t.row,11)&&[1,2,3].includes(t.level)&&num(t.id)&&num(t.spent)&&num(t.cooldown,10)&&typeof t.angle==='number'&&Number.isFinite(t.angle)))return false;
  if(new Set(g.towers.map(t=>t.col+','+t.row)).size!==g.towers.length)return false;
- const spec=e=>e&&enemyTypes.includes(e.type)&&num(e.hp)&&num(e.speed,1000)&&num(e.reward,1000)&&num(e.armor,1)&&num(e.leak,20);
- return g.spawn.every(spec)&&g.enemies.every(e=>spec(e)&&num(e.id)&&num(e.maxHp)&&num(e.d,3000)&&num(e.slow,10))&&g.shots.every(b=>b&&towerTypes.includes(b.type)&&num(b.id)&&num(b.target)&&typeof b.x==='number'&&Number.isFinite(b.x)&&typeof b.y==='number'&&Number.isFinite(b.y)&&num(b.damage)&&num(b.speed,1000)&&num(b.splash,200));
+ const spec=e=>e&&enemyTypes.includes(e.type)&&[0,1].includes(e.lane)&&num(e.hp)&&num(e.speed,1000)&&num(e.reward,1000)&&num(e.armor,1)&&num(e.leak,20);
+ return g.spawn.every(spec)&&g.enemies.every(e=>spec(e)&&num(e.id)&&num(e.maxHp)&&num(e.d,3000)&&num(e.slow,10)&&(e.slowFactor===undefined||num(e.slowFactor,1)))&&g.shots.every(b=>b&&towerTypes.includes(b.type)&&num(b.id)&&num(b.target)&&typeof b.x==='number'&&Number.isFinite(b.x)&&typeof b.y==='number'&&Number.isFinite(b.y)&&num(b.damage)&&num(b.speed,1000)&&num(b.splash,200)&&num(b.chain,3)&&typeof b.burn==='boolean'&&num(b.slowFactor,1)&&num(b.slowTime,4));
 }
 export class Player {
  constructor(ctx){this.ctx=ctx;this.queue=Promise.resolve()}
